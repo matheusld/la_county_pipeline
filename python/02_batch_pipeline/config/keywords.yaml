@@ -1,0 +1,122 @@
+# keywords.yaml
+# Keyword and regex lists for Stage S05 deterministic filtering.
+# These add positive signal to documents. They do NOT discard non-matching docs.
+# Organized by research domain. Case-insensitive matching.
+
+# --- Primary Research Domains ---
+
+ai_governance:
+  description: "Terms related to AI, algorithmic decision-making, and technology governance"
+  keywords:
+    - "artificial intelligence"
+    - "machine learning"
+    - "predictive analytics"
+    - "algorithmic"
+    - "algorithm"
+    - "automated decision"
+    - "decision support"
+    - "risk assessment"
+    - "COMPAS"
+    - "pretrial risk"  # flagging even if out of scope, to track boundary
+    - "technology directive"
+    - "TD 24-04"
+    - "GenAI"
+    - "generative AI"
+    - "governance board"
+    - "chief information officer"
+    - "CIO"
+    - "CISO"
+    - "chief privacy officer"
+    - "data governance"
+    - "facial recognition"
+    - "surveillance"
+    - "automated eligibility"
+    - "benefits automation"
+    - "triage tool"
+    - "matching algorithm"
+    - "HMIS"  # homeless management information system
+    - "coordinated entry"
+    - "decision lens"
+
+care_first:
+  description: "Terms related to care-first governance and community investment"
+  keywords:
+    - "care first"
+    - "care-first"
+    - "Measure J"
+    - "Measure G"
+    - "CFCI"
+    - "community investment"
+    - "alternatives to incarceration"
+    - "ATI"
+    - "youth justice reimagined"
+    - "department of youth development"
+    - "DYD"
+    - "ready to rise"
+    - "restorative justice"
+    - "diversion"
+    - "community-based"
+    - "reentry"
+    - "justice reform"
+    - "advisory committee"
+    - "community governance"
+    - "participatory"
+    - "JCOD"
+    - "justice care opportunities"
+
+procurement:
+  description: "Terms related to government technology procurement"
+  keywords:
+    - "procurement"
+    - "RFP"
+    - "RFI"
+    - "request for proposal"
+    - "request for information"
+    - "master agreement"
+    - "ISD"
+    - "vendor"
+    - "contractor"
+    - "contract"
+    - "sole source"
+    - "piggyback"
+    - "technology acquisition"
+    - "Northpointe"
+    - "Palantir"
+    - "Axon"
+    - "LiveView"
+    - "Collective Medical"
+
+institutional_actors:
+  description: "Specific LA County entities and actors in scope"
+  keywords:
+    - "Board of Supervisors"
+    - "DCFS"
+    - "DPSS"
+    - "DMH"
+    - "DPH"
+    - "probation"
+    - "Peter Loo"
+    - "Lillian Russell"
+    - "James Thurmond"
+    - "Mirian Avalos"
+    - "Lawrence Gann"
+    - "Derek Steele"
+    - "SJLI"
+    - "Social Justice Learning Institute"
+    - "LAANE"
+    - "LeadersUp"
+    - "technology management council"
+
+# --- Regex Patterns ---
+# For more complex matching. Python re syntax, case-insensitive.
+regex_patterns:
+  - "\\bAI\\b"  # standalone "AI" not inside other words
+  - "\\bML\\b"
+  - "\\balgorithm(?:ic|s)?\\b"
+  - "\\bautomated?\\s+(?:decision|system|tool|eligibility)"
+  - "\\brisk\\s+(?:assessment|score|tool)"
+  - "\\bdata\\s+(?:sharing|governance|privacy|protection)"
+  - "\\bcommunity\\s+(?:input|voice|oversight|accountability|power)"
+  - "\\b(?:child|family)\\s+welfare"
+  - "\\bbehavioral\\s+health"
+  - "\\bhomeless(?:ness)?\\s+(?:service|system|outreach)"

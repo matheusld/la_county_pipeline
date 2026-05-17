@@ -1,0 +1,214 @@
+# pipeline_config.yaml
+# All tunable parameters for the dual-model document scoring pipeline.
+# Version this file in git. Every change should be a new commit with rationale.
+
+pipeline:
+  name: "la-county-doc-triage"
+  version: "2.0.0"
+  description: "Dual-model scoring pipeline for LA County care-first/AI governance research"
+  author: "Matheus"
+  created: "2026-03-30"
+
+# --- Source Directories ---
+sources:
+  scanned_docs:
+    path: "./data/scanned_docs"
+    file_type: "json"
+    expected_count: 540
+    description: "Scanned document JSONs containing extracted text or metadata"
+  extracted_text_supporting:
+    path: "./data/extracted_text_supporting"
+    file_type: "json"
+    expected_count: 8400
+    description: "Pre-extracted text from supporting documents (Phase 1 output)"
+  board_comms:
+    path: "./data/board_comms"
+    file_type: "pdf"
+    expected_count: 65
+    description: "Board of Supervisors communications (PDFs)"
+
+# --- Output Directory ---
+outputs:
+  base_dir: "./outputs"
+  log_dir: "./logs"
+
+# --- Stage S02: PDF Extraction ---
+extraction:
+  primary_method: "pdfplumber"
+  fallback_method: "pytesseract"
+  ocr_language: "eng"
+  min_text_length: 100
+  ocr_dpi: 200
+
+# --- Stage S03: Normalization ---
+normalization:
+  strip_patterns:
+    - "^Page \\d+ of \\d+$"
+    - "^\\d+$"
+    - "^BOARD OF SUPERVISORS\\s*$"
+  collapse_whitespace: true
+  unicode_normalize: true
+  max_text_length: 50000
+
+# --- Stage S04: Deduplication ---
+dedup:
+  num_perm: 128
+  threshold: 0.85
+  shingle_size: 5
+
+# --- Stage S05: Keyword Filtering ---
+keyword_filter:
+  keywords_file: "./config/keywords.yaml"
+  match_boost: 0.3
+
+# --- Stages S06a / S06b: Dual-model Scoring ---
+#
+# Both models use the same scoring_v1 prompt. Scores are four-dimensional
+# (0–10 each). The composite is computed locally by the pipeline using the
+# weighted formula; model self-reported composites are never used.
+#
+# Composite formula:
+#   composite = carefirst×0.25 + ai_governance×0.25 + intersection×0.35
+#             + evidentiary×0.15
+#
+# Tier thresholds (applied after aggregation in S07):
+#   Tier 1  composite >= 6.0 AND (carefirst >= 5 OR ai_governance >= 5)
+#   Tier 2  composite >= 3.5
+#   Tier 3  composite >= 1.0
+#   Tier 4  composite < 1.0
+
+scoring:
+  gpt_model: "gpt-5.4-mini"
+  gpt_model_version: "gpt-5.4-mini-2026-03-17"
+  claude_model: "claude-haiku-4-5"
+  claude_model_version: "claude-haiku-4-5-20251001"
+
+  max_input_tokens: 1200          # approximate tokens fed to each model per document
+  truncation_strategy: "head_tail" # preserves opening + closing content of long docs
+  temperature: 0.0                 # deterministic output; ignored by Anthropic (no-op)
+
+  # Max tokens the model may return. 300 is enough for five short JSON fields.
+  gpt_max_output_tokens: 300
+  claude_max_output_tokens: 300
+
+  prompts:
+    scoring_v1:
+      version: "1.0"
+      template: |
+        You are a document relevance scorer for a UC Berkeley public policy research
+        project studying institutional design in Los Angeles County government.
+
+        Research question: What institutional design would bridge LA County's care-first
+        community governance apparatus and its AI/technology governance apparatus?
+
+        CARE-FIRST APPARATUS: Measure J (10% budget set-aside), CFCI Advisory Committee,
+        ATI Initiative, Department of Youth Development (DYD), Office of Diversion and
+        Reentry (ODR), Ready to Rise, Youth Justice Reimagined, JCOD division.
+
+        AI/TECH GOVERNANCE APPARATUS: Technology Directive TD 24-04, GenAI Governance
+        Board (chaired by CIO Peter Loo), ISD procurement, Technology Management Council,
+        algorithmic systems in county service delivery.
+
+        Score this document on FOUR dimensions (0–10 each). Respond ONLY in JSON.
+
+        DIMENSION DEFINITIONS:
+
+        score_carefirst (0–10)
+          How much does this document address care-first governance?
+          0 = no care-first content
+          5 = moderate — references care-first programs but not as the primary subject
+          10 = entirely about care-first governance, funding, or implementation
+
+        score_ai_governance (0–10)
+          How much does this document address AI/tech governance in county contexts?
+          0 = no AI/tech content
+          5 = moderate — references technology but governance angle is secondary
+          10 = entirely about AI governance, procurement, or policy
+
+        score_intersection (0–10)
+          Does this document explicitly connect the two governance systems?
+          0 = neither system mentioned
+          1–2 = one system only, the other absent
+          3–4 = both systems present but discussed separately with no connection
+          5–6 = both systems mentioned in proximity (same paragraph or section)
+          7–8 = the gap or disconnect between the systems is explicitly discussed
+          9–10 = bridging the two governance systems is the central subject
+
+        score_evidentiary (0–10)
+          Concrete evidence quality for academic citation. Count:
+            named actors (department heads, supervisors, named officials): +1 each, max 3
+            specific dollar amounts or budget figures: +1 each, max 2
+            contract IDs, motion numbers, or agenda item references: +1 each, max 2
+            verbatim-quotable language (direct quotes, formal policy language): +1 each, max 2
+            specific dates or meeting dates: +1, max 1
+          Sum the applicable points. Maximum score: 10.
+
+        rationale: One sentence (under 25 words) explaining the scores.
+
+        Respond ONLY in this exact JSON format — no other text:
+        {
+          "score_carefirst": <integer 0–10>,
+          "score_ai_governance": <integer 0–10>,
+          "score_intersection": <integer 0–10>,
+          "score_evidentiary": <integer 0–10>,
+          "rationale": "<one sentence>"
+        }
+
+        Document text:
+        ---
+        {text}
+        ---
+      hash: "UPDATE_AFTER_FINALIZING"
+
+# --- Stage S07: Cross-model Aggregation ---
+aggregate:
+  # Documents where |gpt_composite - claude_composite| >= this threshold are
+  # flagged for inclusion in the shortlist regardless of their final tier.
+  disagreement_threshold: 2.0
+
+  # Characters of normalized text to include as text_preview in each record.
+  # Preview is used in spot-check CSV and shortlist CSV for quick human review.
+  text_preview_length: 500
+
+# --- Stage S08: Low-Priority Spot-Check ---
+spotcheck:
+  # Fraction of the low-priority pool (priority_review=False) to sample.
+  sample_rate: 0.10
+
+  # Fixed seed ensures the same documents are sampled on every re-run,
+  # making the spot-check auditable and reproducible.
+  random_seed: 42
+
+  text_preview_length: 500
+
+# --- Stage S09: Final Shortlist ---
+shortlist:
+  # Target number of documents for full human review.
+  # Based on practical capacity for qualitative analysis within a research semester.
+  # Tier 1 documents are never truncated; the cut falls within Tier 2.
+  target_size: 167
+
+  text_preview_length: 500
+
+# --- Cost Tracking ---
+cost:
+  batch_pricing:
+    # OpenAI — batch API is 50% of standard pricing
+    gpt-5.4-mini:
+      input_per_1m: 0.1875
+      output_per_1m: 1.125
+    gpt-5.4-nano:
+      input_per_1m: 0.05
+      output_per_1m: 0.3125
+    gpt-5.4:
+      input_per_1m: 0.625
+      output_per_1m: 3.75
+    # Anthropic — batch API is 50% of standard pricing
+    claude-haiku-4-5:
+      input_per_1m: 0.40
+      output_per_1m: 2.00
+    claude-sonnet-4-5:
+      input_per_1m: 1.50
+      output_per_1m: 7.50
+  budget_ceiling_usd: 20.00
+  budget_warn_usd: 15.00

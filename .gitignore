@@ -1,0 +1,31 @@
+# ── Scored corpora (large, contain local paths) ───────────────────────────────
+claude/
+gpt/
+
+# ── Large intermediate JSONL outputs ─────────────────────────────────────────
+comparison/s07_merged.jsonl
+comparison/s08_final.jsonl
+comparison/compare_detail.jsonl
+
+# ── Temp / scratch files created during pipeline runs ────────────────────────
+batch_docs_temp.txt
+doc_ids.txt
+docs_for_scoring.json
+docs_only.txt
+docs_parsed.json
+docs_to_score.json
+extracted_docs.json
+parsed_docs.json
+temp_docs.json
+docs_*.txt
+C:*
+*.tmp
+
+# ── Python ────────────────────────────────────────────────────────────────────
+__pycache__/
+*.pyc
+*.pyo
+.env
+
+# ── Node ──────────────────────────────────────────────────────────────────────
+python/node_modules/
