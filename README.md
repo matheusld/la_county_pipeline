@@ -1,12 +1,8 @@
 # LA County Document Scoring Pipeline
 
-**UC Berkeley Goldman School of Public Policy — MPP Capstone, Spring 2026**
+A reproducible pipeline for processing, scoring, and ranking roughly 9,000 LA County public documents to identify a targeted shortlist for qualitative policy analysis.
 
-Scores ~9,000 LA County documents for research relevance, then produces a ranked
-shortlist of ~167 documents for qualitative analysis.
-
-**Research question:** What institutional design would bridge LA County's care-first
-community governance and its AI/tech governance apparatus?
+The project supports three execution paths: interactive agentic workflows with Claude Code or Codex, and a lower-cost Python batch pipeline using OpenAI and Anthropic APIs. Each path produces comparable staged outputs, from inventory and text extraction through scoring, ranking, spot-checking, and final shortlist generation.
 
 ---
 
@@ -15,7 +11,7 @@ community governance and its AI/tech governance apparatus?
 | | [Claude Code](#claude-code-agentic) | [Codex](#codex-agentic) | [Python](#python-batch-api) |
 |--|--|--|--|
 | **Models** | Opus orchestrates, Haiku scores | GPT-4o orchestrates, GPT-4o-mini scores | GPT-5.4-mini + Claude Haiku (dual) |
-| **Cost** | ~$15–20 (agentic, standard pricing) | ~$10–15 (agentic) | ~$2.50 (batch API discount) |
+| **Cost** | ~$15-20 (agentic, standard pricing) | ~$10-15 (agentic) | ~$2.50 (batch API discount) |
 | **Turnaround** | ~1 hour interactive | ~1 hour interactive | ~24 hours (async) |
 | **Best for** | Quick, interactive, no setup | OpenAI users | Reproducible research, cost-sensitive |
 
@@ -25,11 +21,11 @@ community governance and its AI/tech governance apparatus?
 
 **How `CLAUDE.md` and `prompts/orchestrator_claude.md` relate:**
 
-- **`CLAUDE.md`** — project context that Claude Code reads automatically when you open
+- **`CLAUDE.md`** - project context that Claude Code reads automatically when you open
   this folder. It sets model assignments, scoring rules, and batching constraints.
   **You do not paste it anywhere.** It loads silently in the background.
 
-- **`prompts/orchestrator_claude.md`** — the actual task prompt. This is what you send
+- **`prompts/orchestrator_claude.md`** - the actual task prompt. This is what you send
   to Claude Code to start the pipeline.
 
 **Steps:**
@@ -45,9 +41,9 @@ community governance and its AI/tech governance apparatus?
 4. Paste the entire prompt as your first message to Claude Code and press Enter.
 5. Claude Code (Opus) will execute all nine stages, spawning Haiku sub-agents for
    batch scoring. Progress is printed after each batch. You can stop and resume at
-   any point — already-scored documents are skipped on restart.
+   any point - already-scored documents are skipped on restart.
 
-**Output:** `OUTPUT_FOLDER/s09_shortlist.csv` — the primary research output.
+**Output:** `OUTPUT_FOLDER/s09_shortlist.csv` - the primary research output.
 
 ---
 
@@ -101,7 +97,7 @@ OUTPUT_FOLDER/
 
 ## Scoring at a Glance
 
-Four dimensions (0–10 each), scored independently per document:
+Four dimensions (0-10 each), scored independently per document:
 
 | Dimension | What it measures |
 |-----------|-----------------|
